@@ -1846,8 +1846,10 @@ class LangawGame extends Game {
         file.createSync();
       }
       await file.writeAsString(finalJson);
+      Directory directory = new Directory(fileName2);
+      directory.listSync().length;
       //Toast.show("保存完成", mContext);
-      prefix2.Fluttertoast.showToast(msg: "保存完成");
+      prefix2.Fluttertoast.showToast(msg: "已编辑完" +  directory.listSync().length.toString()+"个");
     }
     else {
       print('奇数边的点不是两个，请检查边是否有问题！！');
