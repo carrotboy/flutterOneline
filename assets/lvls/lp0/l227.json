@@ -1,0 +1,249 @@
+{
+    "vertices": [
+        {
+            "id": 0,
+            "x": 336,
+            "y": 228
+        },
+        {
+            "id": 1,
+            "x": 0,
+            "y": 762
+        },
+        {
+            "id": 2,
+            "x": 336,
+            "y": 839
+        },
+        {
+            "id": 3,
+            "x": 168,
+            "y": 686
+        },
+        {
+            "id": 4,
+            "x": 0,
+            "y": 457
+        },
+        {
+            "id": 5,
+            "x": 252,
+            "y": 75
+        },
+        {
+            "id": 6,
+            "x": 84,
+            "y": 304
+        },
+        {
+            "id": 7,
+            "x": 84,
+            "y": 151
+        },
+        {
+            "id": 8,
+            "x": 420,
+            "y": 457
+        },
+        {
+            "id": 9,
+            "x": 504,
+            "y": 686
+        },
+        {
+            "id": 10,
+            "x": 840,
+            "y": 151
+        },
+        {
+            "id": 11,
+            "x": 504,
+            "y": 75
+        },
+        {
+            "id": 12,
+            "x": 672,
+            "y": 228
+        },
+        {
+            "id": 13,
+            "x": 840,
+            "y": 457
+        },
+        {
+            "id": 14,
+            "x": 588,
+            "y": 839
+        },
+        {
+            "id": 15,
+            "x": 756,
+            "y": 609
+        },
+        {
+            "id": 16,
+            "x": 756,
+            "y": 762
+        }
+    ],
+    "edges": [
+        {
+            "id": 0,
+            "start": 3,
+            "end": 6,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 1,
+            "start": 6,
+            "end": 2,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 2,
+            "start": 2,
+            "end": 1,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 3,
+            "start": 1,
+            "end": 8,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 4,
+            "start": 8,
+            "end": 12,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 5,
+            "start": 9,
+            "end": 12,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 6,
+            "start": 12,
+            "end": 13,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 7,
+            "start": 13,
+            "end": 14,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 8,
+            "start": 14,
+            "end": 16,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 9,
+            "start": 16,
+            "end": 15,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 10,
+            "start": 15,
+            "end": 9,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 11,
+            "start": 12,
+            "end": 15,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 12,
+            "start": 15,
+            "end": 11,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 13,
+            "start": 11,
+            "end": 10,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 14,
+            "start": 10,
+            "end": 8,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 15,
+            "start": 8,
+            "end": 3,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 16,
+            "start": 0,
+            "end": 3,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 17,
+            "start": 3,
+            "end": 4,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 18,
+            "start": 4,
+            "end": 5,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 19,
+            "start": 5,
+            "end": 7,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 20,
+            "start": 7,
+            "end": 6,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 21,
+            "start": 6,
+            "end": 0,
+            "lock": false,
+            "repeat": 1
+        }
+    ],
+    "gragh": {
+        "height": 840.0,
+        "width": 924.0
+    }
+}

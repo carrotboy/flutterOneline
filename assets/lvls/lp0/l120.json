@@ -1,0 +1,215 @@
+{
+    "vertices": [
+        {
+            "id": 0,
+            "x": 0,
+            "y": 686
+        },
+        {
+            "id": 1,
+            "x": 168,
+            "y": 75
+        },
+        {
+            "id": 2,
+            "x": 336,
+            "y": 762
+        },
+        {
+            "id": 3,
+            "x": 84,
+            "y": 228
+        },
+        {
+            "id": 4,
+            "x": 84,
+            "y": 533
+        },
+        {
+            "id": 5,
+            "x": 420,
+            "y": 304
+        },
+        {
+            "id": 6,
+            "x": 420,
+            "y": 151
+        },
+        {
+            "id": 7,
+            "x": 420,
+            "y": 533
+        },
+        {
+            "id": 8,
+            "x": 840,
+            "y": 686
+        },
+        {
+            "id": 9,
+            "x": 672,
+            "y": 75
+        },
+        {
+            "id": 10,
+            "x": 504,
+            "y": 762
+        },
+        {
+            "id": 11,
+            "x": 756,
+            "y": 228
+        },
+        {
+            "id": 12,
+            "x": 756,
+            "y": 533
+        }
+    ],
+    "edges": [
+        {
+            "id": 0,
+            "start": 0,
+            "end": 2,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 1,
+            "start": 2,
+            "end": 4,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 2,
+            "start": 4,
+            "end": 1,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 3,
+            "start": 1,
+            "end": 3,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 4,
+            "start": 3,
+            "end": 5,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 5,
+            "start": 5,
+            "end": 12,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 6,
+            "start": 12,
+            "end": 7,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 7,
+            "start": 7,
+            "end": 9,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 8,
+            "start": 9,
+            "end": 6,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 9,
+            "start": 6,
+            "end": 8,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 10,
+            "start": 8,
+            "end": 10,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 11,
+            "start": 10,
+            "end": 12,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 12,
+            "start": 12,
+            "end": 9,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 13,
+            "start": 9,
+            "end": 11,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 14,
+            "start": 11,
+            "end": 5,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 15,
+            "start": 5,
+            "end": 4,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 16,
+            "start": 4,
+            "end": 7,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 17,
+            "start": 7,
+            "end": 1,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 18,
+            "start": 1,
+            "end": 6,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 19,
+            "start": 6,
+            "end": 0,
+            "lock": false,
+            "repeat": 1
+        }
+    ],
+    "gragh": {
+        "height": 840.0,
+        "width": 924.0
+    }
+}

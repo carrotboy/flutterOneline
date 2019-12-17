@@ -1,0 +1,103 @@
+name: langaw
+description: A new Flutter application.
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.1.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^0.1.2
+  path_provider: ^0.4.1
+  flame: ^0.10.2
+  flutter_svg: ^0.14.0
+  shared_preferences: ^0.4.2
+  json_serializable: ^3.0.0
+  build_runner: ^1.6.1
+  simple_permissions: ^0.1.9
+  toast: ^0.1.3
+  fluttertoast: ^3.1.3
+
+
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+  assets:
+    - assets/images/ui/
+    - assets/images/bg/
+    - assets/images/branding/
+    - assets/images/flies/
+    - assets/learningsoneline/
+    - assets/lvls/lp0/
+#    - assets/lvls/lp1/
+#    - assets/lvls/lp2/
+#    - assets/lvls/lp3/
+#    - assets/lvls/lp4/
+#    - assets/lvls/lp5/
+#    - assets/lvls/lp6/
+#    - assets/lvls/lp7/
+#    - assets/lvls/lp8/
+#    - assets/lvls/lp9/
+#    - assets/lvls/lp10/
+#    - assets/lvls/lp11/
+#    - assets/lvls/lp12/
+#    - assets/lvls/lp13/
+#    - assets/lvls/lp14/
+#    - assets/lvls/lp15/
+#    - assets/lvls/lp16/
+    - assets/lvls/lp1000/
+#    - assets/lvls/lp1001/
+#    - assets/lvls/lp1002/
+#    - assets/lvls/lp1003/
+#    - assets/lvls/lp1004/
+#    - assets/lvls/lp1005/
+#    - assets/lvls/lp1006/
+#    - assets/lvls/lp1007/
+#    - assets/lvls/lp1008/
+#    - assets/lvls/lp1009/
+#    - assets/lvls/lp1010/
+#    - assets/lvls/lp1011/
+#    - assets/lvls/lp1012/
+#    - assets/lvls/lp1013/
+#    - assets/lvls/lp1014/
+#    - assets/lvls/lp1015/
+#    - assets/lvls/lp1016/
+#    - assets/lvls/lp1017/
+#    - assets/lvls/lp1018/
+#    - assets/lvls/lp1019/
+#    - assets/lvls/lp1020/
+#    - assets/lvls/lp1021/
+#    - assets/lvls/lp1022/
+#    - assets/lvls/lp1023/
+
+
+

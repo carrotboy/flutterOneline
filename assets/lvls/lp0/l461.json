@@ -1,0 +1,96 @@
+{
+    "vertices": [
+        {
+            "id": 0,
+            "x": 504,
+            "y": 533
+        },
+        {
+            "id": 1,
+            "x": 336,
+            "y": 762
+        },
+        {
+            "id": 2,
+            "x": 168,
+            "y": 457
+        },
+        {
+            "id": 3,
+            "x": 336,
+            "y": 457
+        },
+        {
+            "id": 4,
+            "x": 504,
+            "y": 380
+        },
+        {
+            "id": 5,
+            "x": 336,
+            "y": 151
+        }
+    ],
+    "edges": [
+        {
+            "id": 0,
+            "start": 0,
+            "end": 2,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 1,
+            "start": 2,
+            "end": 5,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 2,
+            "start": 5,
+            "end": 3,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 3,
+            "start": 3,
+            "end": 4,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 4,
+            "start": 4,
+            "end": 2,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 5,
+            "start": 2,
+            "end": 1,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 6,
+            "start": 1,
+            "end": 3,
+            "lock": false,
+            "repeat": 1
+        },
+        {
+            "id": 7,
+            "start": 3,
+            "end": 0,
+            "lock": false,
+            "repeat": 1
+        }
+    ],
+    "gragh": {
+        "height": 840.0,
+        "width": 924.0
+    }
+}
