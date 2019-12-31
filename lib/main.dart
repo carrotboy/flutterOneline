@@ -65,7 +65,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool visible = true;
+  bool visible = false;
   List<FileStruct> fileList = new List();
   int selectPos = -1;
   @override

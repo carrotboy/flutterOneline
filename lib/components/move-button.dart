@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flame/game.dart';
 import 'package:flame/sprite.dart';
 import 'package:langaw/euler.dart';
 import 'package:langaw/langaw-game.dart';
@@ -29,6 +30,26 @@ class MoveButton {
   }
 }
 
+class ScaleButton {
+  final LangawGame game;
+  Rect rect;
+  Sprite sprite;
+
+  ScaleButton(this.game, Rect rect) {
+    this.rect = rect;
+    sprite = Sprite('ui/move.png');
+  }
+
+  void render(Canvas c) {
+    sprite.renderRect(c, rect);
+  }
+
+  void onTapDown() {
+    game.mode = LangawGame.MODE_MOVE;
+  }
+}
+
+
 
 class NextButton {
   final LangawGame game;
@@ -45,7 +66,7 @@ class NextButton {
   }
 
   void onTapDown() {
-    if (game.mode != LangawGame.MODE_MOVE) return;
+    //if (game.mode != LangawGame.MODE_MOVE) return;
     game.mode = LangawGame.MODE_MOVE;
     if (prefix0.myApp.state.selectPos < prefix0.myApp.state.fileList.length-1) {
       initEuler(prefix0.myApp.state.fileList[++prefix0.myApp.state.selectPos].path);
@@ -94,5 +115,43 @@ class SaveButton {
 
   void onTapDown() {
     game.saveJson();
+  }
+}
+
+class EraseButton {
+  final LangawGame game;
+  Rect rect;
+  Sprite sprite;
+
+  EraseButton(this.game, Rect rect) {
+    this.rect = rect;
+    sprite = Sprite('ui/erase.png');
+  }
+
+  void render(Canvas c) {
+    sprite.renderRect(c, rect);
+  }
+
+  void onTapDown() {
+    game.mode = LangawGame.MODE_ERASE;
+  }
+}
+
+class DeleteVertexButton {
+  final LangawGame game;
+  Rect rect;
+  Sprite sprite;
+
+  DeleteVertexButton(this.game, Rect rect) {
+    this.rect = rect;
+    sprite = Sprite('ui/delete_vertex.png');
+  }
+
+  void render(Canvas c) {
+    sprite.renderRect(c, rect);
+  }
+
+  void onTapDown() {
+    game.mode = LangawGame.MODE_DELETE_VERTEX;
   }
 }

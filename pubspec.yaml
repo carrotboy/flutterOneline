@@ -58,46 +58,48 @@ flutter:
     - assets/images/flies/
     - assets/learningsoneline/
     - assets/lvls/lp0/
-#    - assets/lvls/lp1/
-#    - assets/lvls/lp2/
-#    - assets/lvls/lp3/
-#    - assets/lvls/lp4/
-#    - assets/lvls/lp5/
-#    - assets/lvls/lp6/
-#    - assets/lvls/lp7/
-#    - assets/lvls/lp8/
-#    - assets/lvls/lp9/
-#    - assets/lvls/lp10/
-#    - assets/lvls/lp11/
-#    - assets/lvls/lp12/
-#    - assets/lvls/lp13/
-#    - assets/lvls/lp14/
-#    - assets/lvls/lp15/
-#    - assets/lvls/lp16/
+    - assets/lvls/lp1/
+    - assets/lvls/lp2/
+    - assets/lvls/lp3/
+    - assets/lvls/lp4/
+    - assets/lvls/lp5/
+    - assets/lvls/lp6/
+    - assets/lvls/lp7/
+    - assets/lvls/lp8/
+    - assets/lvls/lp9/
+    - assets/lvls/lp10/
+    - assets/lvls/lp11/
+    - assets/lvls/lp12/
+    - assets/lvls/lp13/
+    - assets/lvls/lp14/
+    - assets/lvls/lp15/
+    - assets/lvls/lp16/
+    - assets/lvls/lp17/
+    - assets/lvls/lp18/
     - assets/lvls/lp1000/
-#    - assets/lvls/lp1001/
-#    - assets/lvls/lp1002/
-#    - assets/lvls/lp1003/
-#    - assets/lvls/lp1004/
-#    - assets/lvls/lp1005/
-#    - assets/lvls/lp1006/
-#    - assets/lvls/lp1007/
-#    - assets/lvls/lp1008/
-#    - assets/lvls/lp1009/
-#    - assets/lvls/lp1010/
-#    - assets/lvls/lp1011/
-#    - assets/lvls/lp1012/
-#    - assets/lvls/lp1013/
-#    - assets/lvls/lp1014/
-#    - assets/lvls/lp1015/
-#    - assets/lvls/lp1016/
-#    - assets/lvls/lp1017/
-#    - assets/lvls/lp1018/
-#    - assets/lvls/lp1019/
-#    - assets/lvls/lp1020/
-#    - assets/lvls/lp1021/
-#    - assets/lvls/lp1022/
-#    - assets/lvls/lp1023/
+    - assets/lvls/lp1001/
+    - assets/lvls/lp1002/
+    - assets/lvls/lp1003/
+    - assets/lvls/lp1004/
+    - assets/lvls/lp1005/
+    - assets/lvls/lp1006/
+    - assets/lvls/lp1007/
+    - assets/lvls/lp1008/
+    - assets/lvls/lp1009/
+    - assets/lvls/lp1010/
+    - assets/lvls/lp1011/
+    - assets/lvls/lp1012/
+    - assets/lvls/lp1013/
+    - assets/lvls/lp1014/
+    - assets/lvls/lp1015/
+    - assets/lvls/lp1016/
+    - assets/lvls/lp1017/
+    - assets/lvls/lp1018/
+    - assets/lvls/lp1019/
+    - assets/lvls/lp1020/
+    - assets/lvls/lp1021/
+    - assets/lvls/lp1022/
+    - assets/lvls/lp1023/
 
 
 

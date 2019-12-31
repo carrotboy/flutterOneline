@@ -1,0 +1,1 @@
+{"edges":[{"start":"A","end":"C","id":0},{"start":"C","end":"D","id":1},{"start":"D","end":"E","id":2},{"start":"E","end":"B","id":3},{"start":"B","end":"A","id":4}],"vertices":[{"id":"A","x":420,"y":0},{"id":"B","x":157,"y":924},{"id":"C","x":682,"y":924},{"id":"D","x":0,"y":346},{"id":"E","x":840,"y":346}],"graph":{"height":924,"width":840}}

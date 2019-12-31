@@ -1,0 +1,1 @@
+{"edges":[{"start":"A","end":"B","id":0},{"start":"B","end":"C","id":1},{"start":"C","end":"D","id":2},{"start":"D","end":"A","id":3}],"vertices":[{"id":"A","x":0,"y":0},{"id":"B","x":839,"y":0},{"id":"C","x":839,"y":924},{"id":"D","x":0,"y":924}],"graph":{"height":924,"width":840}}

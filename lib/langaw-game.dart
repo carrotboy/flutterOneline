@@ -28,6 +28,7 @@ import 'package:langaw/daily-challenge-level-data.dart';
 import 'package:langaw/level_data_generate.dart';
 import 'package:langaw/main.dart';
 import 'package:langaw/oneline-basic.dart';
+import 'package:langaw/solve.dart';
 import 'package:langaw/symmetry.dart';
 import 'package:langaw/translate-data.dart';
 import 'package:langaw/translate-data.dart' as prefix0;
@@ -47,11 +48,10 @@ import 'package:flutter/services.dart';
 import 'package:toast/toast.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
+import 'calculate-util.dart';
 import 'euler.dart';
 
-
 class LangawGame extends Game {
-
   Size screenSize;
 
   Backyard background;
@@ -65,16 +65,22 @@ class LangawGame extends Game {
   EdgeRepeatButton edgeRepeatButton;
   LoadButton loadButton;
   MoveButton moveButton;
+  ScaleButton scaleButton;
   NextButton nextButton;
   PreButton preButton;
   SaveButton saveButton;
-
+  EraseButton eraseButton;
+  DeleteVertexButton deleteVertexButton;
 
   View activeView = View.home;
 
   List<Offset> vertexList = [];
   List<Edge> edgeList = [];
   List<List<bool>> connect;
+  List<List<SolveEdge>> solveEdgeConnects = [];
+  List<SolveVertex> solveVertexList = [];
+  int temp = 0;
+  List<int> degreeList = [];
 
   Offset tempStartPoint;
   int tempStartPointIndex = -2;
@@ -90,6 +96,10 @@ class LangawGame extends Game {
   static const int MODE_EDGE_REPEAT = 3;
 
   static const int MODE_MOVE = 4;
+
+  static const int MODE_ERASE = 5;
+
+  static const int MODE_DELETE_VERTEX = 6;
 
   int mode = MODE_VERTEX;
 
@@ -110,11 +120,10 @@ class LangawGame extends Game {
   static const double Y_MIN_LIMIT = 100;
   static const double Y_LIMIT = Y_MIN_LIMIT + 750;
 
-
   static const double ICON_SIZE = 40;
-  static const double ICON_TAP = 40;
+  static const double ICON_TAP = 28;
 
-  static const double MODE_FONT_SIZE = 50;
+  static const double MODE_FONT_SIZE = 25;
   static const double MODE_SPECIAL_FONT_SIZE = 55;
 
   static const double ICON_DIRECTION_SIZE = 10;
@@ -131,7 +140,6 @@ class LangawGame extends Game {
   String storagePath = '';
   String outPutPngFilePath = "";
 
-
   LangawGame() {
     initialize();
   }
@@ -139,7 +147,6 @@ class LangawGame extends Game {
   void initialize() async {
     resize(await Flame.util.initialDimensions());
     background = Backyard(this);
-
 
     double rectX = X_LIMIT + ICON_SIZE;
 
@@ -160,19 +167,27 @@ class LangawGame extends Game {
 
     rect = Rect.fromLTWH(
         rectX, Y_MIN_LIMIT + (ICON_SIZE + ICON_TAP) * 4, ICON_SIZE, ICON_SIZE);
-    undoButton = UndoButton(this, rect);
+    eraseButton = EraseButton(this, rect);
 
     rect = Rect.fromLTWH(
         rectX, Y_MIN_LIMIT + (ICON_SIZE + ICON_TAP) * 5, ICON_SIZE, ICON_SIZE);
-    printButton = PrintButton(this, rect);
+    deleteVertexButton = DeleteVertexButton(this, rect);
 
     rect = Rect.fromLTWH(
         rectX, Y_MIN_LIMIT + (ICON_SIZE + ICON_TAP) * 6, ICON_SIZE, ICON_SIZE);
-    cleanButton = CleanButton(this, rect);
+    undoButton = UndoButton(this, rect);
 
     rect = Rect.fromLTWH(
         rectX, Y_MIN_LIMIT + (ICON_SIZE + ICON_TAP) * 7, ICON_SIZE, ICON_SIZE);
-    moveButton = MoveButton(this, rect);
+    printButton = PrintButton(this, rect);
+
+    rect = Rect.fromLTWH(
+        rectX, Y_MIN_LIMIT + (ICON_SIZE + ICON_TAP) * 8, ICON_SIZE, ICON_SIZE);
+    cleanButton = CleanButton(this, rect);
+
+    rect = Rect.fromLTWH(
+        rectX, Y_MIN_LIMIT + (ICON_SIZE + ICON_TAP) * 9, ICON_SIZE, ICON_SIZE);
+    scaleButton = ScaleButton(this, rect);
 
     rect = Rect.fromLTWH(
         50, 50, ICON_SIZE, ICON_SIZE); // hardcode to show in at left corner
@@ -206,7 +221,6 @@ class LangawGame extends Game {
     storagePath = directory.path;
   }
 
-
   //out put the edge and vertex to json
   void outputVetexAndEdgeInformation() {
     if (doVertexCheckValid()) {
@@ -214,8 +228,8 @@ class LangawGame extends Game {
 
       List<Edge> edges = new List(edgeList.length);
 
-      for (int i = 0; i < edgeList.length; i ++) // draw edge
-          {
+      for (int i = 0; i < edgeList.length; i++) // draw edge
+      {
         Edge edge = edgeList.elementAt(i);
         edge.inArrayIndex = i;
         edges[i] = edge;
@@ -224,7 +238,7 @@ class LangawGame extends Game {
       map['edges'] = edges;
 
       List<Vertex> vertexs = new List(vertexList.length);
-      for (int i = 0; i < vertexList.length; i ++) {
+      for (int i = 0; i < vertexList.length; i++) {
         Offset offset = vertexList.elementAt(i);
 
         Vertex vertex = new Vertex(null);
@@ -242,18 +256,15 @@ class LangawGame extends Game {
 
       map['vertices'] = vertexs;
 
-
       map['graph'] = {"height": 750, "width": 540};
 
       String finalJson = jsonEncode(map);
 
       printLog(finalJson);
-    }
-    else {
+    } else {
       print('奇数边的点不是两个，请检查边是否有问题！！');
     }
   }
-
 
   //check before ouput
   bool doVertexCheckValid() {
@@ -261,14 +272,13 @@ class LangawGame extends Game {
 
     List<int> vertexConnectedEdgeCounts = new List(vertexList.length);
 
-    for (int i = 0; i < vertexConnectedEdgeCounts.length; i ++) {
+    for (int i = 0; i < vertexConnectedEdgeCounts.length; i++) {
       vertexConnectedEdgeCounts[i] = 0;
     }
 
-    for (int i = 0; i < edgeList.length; i ++) // draw edge
-        {
+    for (int i = 0; i < edgeList.length; i++) // draw edge
+    {
       Edge edge = edgeList.elementAt(i);
-
 
       vertexConnectedEdgeCounts[edge.startIndex] =
           vertexConnectedEdgeCounts[edge.startIndex] + 1;
@@ -277,9 +287,8 @@ class LangawGame extends Game {
           vertexConnectedEdgeCounts[edge.endIndex] + 1;
     }
 
-
     int oddCount = 0;
-    for (int i = 0; i < vertexConnectedEdgeCounts.length; i ++) {
+    for (int i = 0; i < vertexConnectedEdgeCounts.length; i++) {
       int edgeCountForEachVertex = vertexConnectedEdgeCounts[i];
 
       if (edgeCountForEachVertex == 0) {
@@ -295,11 +304,8 @@ class LangawGame extends Game {
       }
     }
 
-
     if (oddCount == 0 || oddCount == 2) {
-
-    }
-    else {
+    } else {
       isValid = false;
     }
 
@@ -324,7 +330,6 @@ class LangawGame extends Game {
 //      print(msg);// 打印剩余日志
 //    }
 
-
     int maxLogSize = 1000;
     for (int i = 0; i <= msg.length / maxLogSize; i++) {
       int start = i * maxLogSize;
@@ -334,18 +339,17 @@ class LangawGame extends Game {
     }
   }
 
-
   //根据点击的位置找到已经在顶点列表中最接近的顶点，需要满足最小距离在 DISTANCE_CHECK_SIZE 之内
   int findCandidatePoint(double dx, double dy) {
     int index = -1;
 
     double minDisance = 10000;
 
-    for (int i = 0; i < vertexList.length; i ++) {
+    for (int i = 0; i < vertexList.length; i++) {
       Offset offset = vertexList.elementAt(i);
 
-      double distance = LevelDataTune.calculateDis(
-          dx, dy, offset.dx, offset.dy);
+      double distance =
+          LevelDataTune.calculateDis(dx, dy, offset.dx, offset.dy);
 
       if (distance < minDisance && distance <= DISTANCE_CHECK_THRESHHOLD) {
         minDisance = distance;
@@ -356,7 +360,6 @@ class LangawGame extends Game {
     return index;
   }
 
-
   void onVerticalDragStart(DragStartDetails details) {
     switch (mode) {
       case MODE_VERTEX:
@@ -366,6 +369,8 @@ class LangawGame extends Game {
       case MODE_EDGE_LOCK:
         break;
       case MODE_EDGE_REPEAT:
+        break;
+      case MODE_ERASE:
         break;
       case MODE_MOVE:
         break;
@@ -395,6 +400,7 @@ class LangawGame extends Game {
       case MODE_EDGE:
       case MODE_EDGE_REPEAT:
       case MODE_EDGE_LOCK:
+      case MODE_ERASE:
         handleDragEndFindEndingPoint(tempCurrentPoint);
         break;
       case MODE_MOVE:
@@ -415,6 +421,7 @@ class LangawGame extends Game {
       case MODE_EDGE:
       case MODE_EDGE_REPEAT:
       case MODE_EDGE_LOCK:
+      case MODE_ERASE:
         break;
       case MODE_MOVE:
         if (tempStartPoint != null) {
@@ -430,53 +437,91 @@ class LangawGame extends Game {
     }
   }
 
-
   void drawModeText(Canvas canvas) {
     TextStyle style = TextStyle(fontSize: MODE_FONT_SIZE, color: Colors.black);
-
+    String prefix = "";
+    if (myApp.state.fileList != null && myApp.state.selectPos > -1) {
+      FileStruct file = myApp.state.fileList[myApp.state.selectPos];
+      prefix = 'Level' +
+          file.level.toString() +
+          " Stage" +
+          file.stage.toString() + "  ";
+    }
     String modeString = '';
 
     switch (mode) {
       case MODE_VERTEX:
-        modeString = '打点模式';
+        modeString = prefix+'打点模式';
         break;
       case MODE_EDGE:
-        modeString = '连边模式';
+        modeString =prefix+ '连边模式';
         break;
       case MODE_EDGE_LOCK:
-        modeString = '连方向边模式';
-        style = TextStyle(fontSize: MODE_SPECIAL_FONT_SIZE, color: Colors.red);
+        modeString = prefix+'连方向边模式';
+        //style = TextStyle(fontSize: MODE_SPECIAL_FONT_SIZE, color: Colors.red);
         break;
       case MODE_EDGE_REPEAT:
-        modeString = '连重复边模式';
-        style = TextStyle(fontSize: MODE_SPECIAL_FONT_SIZE, color: Colors.red);
+        modeString = prefix+'连重复边模式';
+        //style = TextStyle(fontSize: MODE_SPECIAL_FONT_SIZE, color: Colors.red);
         break;
       case MODE_MOVE:
-        modeString = '原图拉伸';
-        if (myApp.state.fileList != null && myApp.state.selectPos > -1) {
-          FileStruct file = myApp.state.fileList[myApp.state.selectPos];
-          modeString = 'Level' + file.level.toString() + " Stage" +
-              file.stage.toString();
-        }
+        modeString = prefix+'原图拉伸';
+//        if (myApp.state.fileList != null && myApp.state.selectPos > -1) {
+//          FileStruct file = myApp.state.fileList[myApp.state.selectPos];
+//          modeString = 'Level' +
+//              file.level.toString() +
+//              " Stage" +
+//              file.stage.toString();
+//        }
+        break;
+      case MODE_ERASE:
+        modeString = prefix+ '擦除连线';
+        break;
+      case MODE_DELETE_VERTEX:
+        modeString = prefix+ '删点模式';
         break;
       default:
       // code block
     }
 
-
     TextSpan span = new TextSpan(text: modeString, style: style);
-    TextPainter tp = new TextPainter(text: span,
+    TextPainter tp = new TextPainter(
+        text: span,
         textAlign: TextAlign.left,
         textDirection: TextDirection.ltr);
     tp.layout();
-    tp.paint(canvas, new Offset(X_LIMIT / 2 - 50, Y_LIMIT + 0));
+    tp.paint(canvas, new Offset(X_LIMIT / 2 - modeString.length * 7, Y_LIMIT + 0));
+  }
+
+  void drawAnswer(Canvas canvas) {
+    if (game.solveVertexList.isEmpty) return;
+    TextStyle style = TextStyle(fontSize: MODE_FONT_SIZE, color: Colors.black);
+    String answer = "";
+    OneLineBasic basic = new OneLineBasic();
+    if (game.solveVertexList.isNotEmpty) {
+      answer = basic.getVectexId(game.solveVertexList[0].index);
+      for (int i = 1; i < game.solveVertexList.length; i++) {
+        answer = answer + "->" + basic.getVectexId(game.solveVertexList[i].index);
+        if (i % 16 == 0) {
+          answer += '\n';
+        }
+      }
+    }
+
+    TextSpan span = new TextSpan(text: answer, style: style);
+    TextPainter tp = new TextPainter(
+        text: span,
+        textAlign: TextAlign.left,
+        textDirection: TextDirection.ltr);
+    tp.layout();
+    tp.paint(canvas, new Offset(100, Y_LIMIT + 40));
   }
 
   void render(Canvas canvas) {
     background.render(canvas);
 
     drawModeText(canvas);
-
+    drawAnswer(canvas);
 
     //draw the buttons
     vertexButton.render(canvas);
@@ -484,42 +529,42 @@ class LangawGame extends Game {
     cleanButton.render(canvas);
     printButton.render(canvas);
     undoButton.render(canvas);
+    eraseButton.render(canvas);
+    deleteVertexButton.render(canvas);
 
     edgeDirectionButton.render(canvas);
     edgeRepeatButton.render(canvas);
-    cleanButton.render(canvas);
     moveButton.render(canvas);
+    scaleButton.render(canvas);
     preButton.render(canvas);
     nextButton.render(canvas);
     saveButton.render(canvas);
     loadButton.render(canvas); //for bunch of png
 
-    List<int> degreeList = List.generate(vertexList.length, (int index){return 0;});
+    degreeList = List.generate(vertexList.length, (int index) {
+      return 0;
+    });
 
     if (!skipRender) {
       List<int> listOfRepeatEdgeIndexs = new List();
-      for (int i = 0; i < edgeList.length; i ++) { // draw edge
+      for (int i = 0; i < edgeList.length; i++) {
+        // draw edge
         Edge edge = edgeList.elementAt(i);
         Offset offsetStartPoint = vertexList.elementAt(edge.startIndex);
-        Offset offsetEndPoint =
-        vertexList.elementAt(edge.endIndex);
+        Offset offsetEndPoint = vertexList.elementAt(edge.endIndex);
         degreeList[edge.startIndex]++;
         degreeList[edge.endIndex]++;
 
-
         if (edge.repeat == 2) {
           listOfRepeatEdgeIndexs.add(i);
-        }
-
-        else if (edge.lock == true) {
+        } else if (edge.lock == true) {
           Paint linePaint = Paint();
           linePaint.color = Color(0xffaaddbb);
           linePaint.strokeWidth = LINE_CONNETED_EDGE;
           canvas.drawLine(offsetStartPoint, offsetEndPoint, linePaint);
 
           drawEdgeDirectionLabel(canvas, offsetStartPoint, offsetEndPoint);
-        }
-        else {
+        } else {
           Paint linePaint = Paint();
           linePaint.color = Color(0xffaaddbb);
           linePaint.strokeWidth = LINE_CONNETED_EDGE;
@@ -527,42 +572,39 @@ class LangawGame extends Game {
         }
       }
 
-
       //draw repeated edge
       drawRepeatedEdge(canvas, listOfRepeatEdgeIndexs, edgeList, vertexList, 0);
-
 
       //draw all the vertex
       Paint radiusPaint = Paint();
       radiusPaint.color = Color(0xffff00ff);
-      for (int i = 0; i < vertexList.length; i ++) {
+      for (int i = 0; i < vertexList.length; i++) {
         Offset offset = vertexList.elementAt(i);
         if (degreeList[i] == 0) {
           radiusPaint.color = Color(0xff0000ff);
-        } else if (degreeList[i]%2 == 1) {
+        } else if (degreeList[i] % 2 == 1) {
           radiusPaint.color = Colors.black;
         } else {
           radiusPaint.color = Color(0xffff00ff);
         }
         canvas.drawCircle(offset, VERTEX_RADIUS, radiusPaint);
 
-
         Vertex vertex = new Vertex(null);
         String id = vertex.getVectexId(i);
 
-
         Offset idTextOffset = Offset(
-            offset.dx - VERTEX_RADIUS / 2, offset.dy - VERTEX_RADIUS / 2 - 3);
+            offset.dx - VERTEX_RADIUS / 2, offset.dy - VERTEX_RADIUS / 2 - 4);
 
-        TextSpan span = new TextSpan(text: id,
+        TextSpan span = new TextSpan(
+            text: id,
             style: TextStyle(fontSize: VERTEX_FONT_SIZE, color: Colors.white));
-        TextPainter tp = new TextPainter(text: span,
+        TextPainter tp = new TextPainter(
+            text: span,
             textAlign: TextAlign.justify,
             textDirection: TextDirection.ltr);
         tp.layout();
         tp.paint(canvas, idTextOffset);
       }
-
 
       if (tempStartPoint != null && tempCurrentPoint != null) {
         Paint linePaint = Paint();
@@ -574,11 +616,13 @@ class LangawGame extends Game {
     }
   }
 
-
-  void drawRepeatedEdge(Canvas canvas, List indexList,
-      List<Edge> edgeListToDraw, List<Offset> vertexListToDraw,
+  void drawRepeatedEdge(
+      Canvas canvas,
+      List indexList,
+      List<Edge> edgeListToDraw,
+      List<Offset> vertexListToDraw,
       double canvasXShift) {
-    for (int i = 0; i < indexList.length; i ++) {
+    for (int i = 0; i < indexList.length; i++) {
       int indexInEdgeList = indexList[i];
 
       Edge edge = edgeListToDraw.elementAt(indexInEdgeList);
@@ -597,7 +641,6 @@ class LangawGame extends Game {
       canvas.drawLine(
           offsetStartPointRepeatEdge, offsetEndPointRepeatEdge, linePaint);
 
-
       drawEdgeRepeatNumber(
           canvas, offsetStartPoint, offsetEndPoint, canvasXShift);
     }
@@ -606,13 +649,16 @@ class LangawGame extends Game {
   void drawEdgeRepeatNumber(Canvas canvas, Offset offsetStartPoint,
       Offset offsetEndPoint, double canvasXShift) {
     Offset middlePoint = Offset(
-        (offsetStartPoint.dx + offsetEndPoint.dx) / 2 + canvasXShift -
+        (offsetStartPoint.dx + offsetEndPoint.dx) / 2 +
+            canvasXShift -
             VERTEX_RADIUS / 2,
         (offsetStartPoint.dy + offsetEndPoint.dy) / 2 - VERTEX_RADIUS / 2 - 2);
 
-    TextSpan span = new TextSpan(text: '2',
+    TextSpan span = new TextSpan(
+        text: '2',
         style: TextStyle(fontSize: VERTEX_FONT_SIZE, color: Colors.black));
-    TextPainter tp = new TextPainter(text: span,
+    TextPainter tp = new TextPainter(
+        text: span,
         textAlign: TextAlign.center,
         textDirection: TextDirection.ltr);
     tp.layout();
@@ -628,14 +674,12 @@ class LangawGame extends Game {
     return inRads;
   }
 
-
-  void drawEdgeDirectionLabel(Canvas canvas, Offset offsetStartPoint,
-      Offset offsetEndPoint) {
+  void drawEdgeDirectionLabel(
+      Canvas canvas, Offset offsetStartPoint, Offset offsetEndPoint) {
     canvas.save();
 
-    final player = SpriteComponent.fromSprite(
-        ICON_DIRECTION_SIZE, ICON_DIRECTION_SIZE,
-        directionSprite); // width, height, sprite
+    final player = SpriteComponent.fromSprite(ICON_DIRECTION_SIZE,
+        ICON_DIRECTION_SIZE, directionSprite); // width, height, sprite
 
     // screen coordinates
     player.x = (offsetStartPoint.dx + offsetEndPoint.dx) / 2;
@@ -651,23 +695,20 @@ class LangawGame extends Game {
     canvas.restore();
   }
 
-  void update(double t) {
-
-  }
+  void update(double t) {}
 
   void resize(Size size) {
     screenSize = size;
   }
-
 
   //clean the canvas, reset to original state
   void doClean() {
     vertexList.clear();
     edgeList.clear();
     doEdgeModeClean();
+    clearSolveAnswer();
     mode = MODE_VERTEX;
   }
-
 
   void doEdgeModeClean() {
     tempCurrentPoint = null;
@@ -683,12 +724,10 @@ class LangawGame extends Game {
     }
   }
 
-
   void doPrint() {
     saveJson();
     //outputVetexAndEdgeInformation(); //test
   }
-
 
   //add points to the list
   void addVertexToList(TapDownDetails d) {
@@ -701,9 +740,11 @@ class LangawGame extends Game {
       tempYLimit = Y_LIMIT;
     }
 
-
-    if (dx >= X_MIN_LIMIT - 4 && dx <= X_LIMIT + 4 && dy >= Y_MIN_LIMIT - 4 &&
-        dy <= tempYLimit + 4) { // do not affect the bottom bar
+    if (dx >= X_MIN_LIMIT - 4 &&
+        dx <= X_LIMIT + 4 &&
+        dy >= Y_MIN_LIMIT - 4 &&
+        dy <= tempYLimit + 4) {
+      // do not affect the bottom bar
       if (vertexList.length >= 30) {
         print('too many vertexs');
         return;
@@ -715,6 +756,26 @@ class LangawGame extends Game {
     }
   }
 
+  void deleteVertex(TapDownDetails d) {
+    var dx = d.globalPosition.dx;
+    var dy = d.globalPosition.dy;
+
+    int index = getDeleteGoodPoint(Offset(dx, dy));
+    if (index >= 0 && index < vertexList.length) {
+      vertexList.removeAt(index);
+      edgeList.removeWhere((edge)=>edge.startIndex == index || edge.endIndex == index);
+      for (int i = 0; i < edgeList.length; i++) {
+        prefix1.Edge edge = edgeList[i];
+        if (edge.startIndex > index) {
+          edge.startIndex--;
+        }
+        if (edge.endIndex > index) {
+          edge.endIndex--;
+        }
+      }
+      clearSolveAnswer();
+    }
+  }
 
   //add points in tens coordinate
   void addTensVertex(Offset offset) {
@@ -723,8 +784,7 @@ class LangawGame extends Game {
     double dx = offset.dx;
     double dy = offset.dy;
 
-
-    for (int i = 0; i < vertexList.length; i ++) {
+    for (int i = 0; i < vertexList.length; i++) {
       Offset offsetInList = vertexList.elementAt(i);
 
       if ((dx - offsetInList.dx).abs() <= xyThreshhold) {
@@ -741,7 +801,6 @@ class LangawGame extends Game {
       tempDxInt = tempDxInt + 5;
     }
 
-
     int tempDyInt = dy.toInt();
     if (tempDyInt % 10 >= 5) {
       tempDyInt = tempDyInt + 5;
@@ -754,7 +813,7 @@ class LangawGame extends Game {
   }
 
   bool checkIfAGoodPoint(Offset offset) {
-    for (int i = 0; i < vertexList.length; i ++) {
+    for (int i = 0; i < vertexList.length; i++) {
       Offset offsetInList = vertexList.elementAt(i);
       double dis = LevelDataTune.calculateDis(
           offset.dx, offset.dy, offsetInList.dx, offsetInList.dy);
@@ -767,24 +826,32 @@ class LangawGame extends Game {
     return true;
   }
 
+  int getDeleteGoodPoint(Offset offset) {
+    for (int i = 0; i < vertexList.length; i++) {
+      Offset offsetInList = vertexList.elementAt(i);
+      double dis = LevelDataTune.calculateDis(
+          offset.dx, offset.dy, offsetInList.dx, offsetInList.dy);
+      if (dis <= 20) {
+        return i;
+      }
+    }
+    return -1;
+  }
 
   void handleDragEndFindEndingPoint(Offset offset) {
-    if (offset != null && offset.dy > theButtomOpBarHeight &&
+    if (offset != null &&
+        offset.dy > theButtomOpBarHeight &&
         offset.dy < screenSize.height - theButtomOpBarHeight) {
       int index = findCandidatePoint(offset.dx, offset.dy);
-
-      if (index >= 0 && index <= vertexList.length - 1 &&
-          tempStartPointIndex >= 0 &&
-          index != tempStartPointIndex) //not same as start point
-          {
-        if (checkIfDuplicateEdge(tempStartPointIndex, index) == false) {
+      if (index >= 0 && index <= vertexList.length - 1 && tempStartPointIndex >= 0 && index != tempStartPointIndex) {
+        //not same as start point
+        if (mode != MODE_ERASE && checkIfDuplicateEdge(tempStartPointIndex, index) == false) {
           // this is an  valid edge
 
           Edge edge = Edge(null);
 
           edge.startIndex = tempStartPointIndex;
           edge.endIndex = index;
-
 
           if (mode == MODE_EDGE_LOCK) {
             edge.lock = true;
@@ -797,64 +864,52 @@ class LangawGame extends Game {
           edge.inArrayIndex = edgeList.length;
           edgeList.add(edge);
 
+          if (mode == MODE_EDGE_REPEAT) {
+            Edge edge2 = prefix1.Edge(edge.toJson());
+            edge2.repeat = 1;
+            edgeList.add(edge2);
+          }
+
           int size = edgeList.length;
 
           print(' edgeList size = $size');
 
           doEdgeModeClean();
+          clearSolveAnswer();
+        } else if (mode == MODE_ERASE) {
+          edgeList.removeWhere((item)=>(item.startIndex == index && item.endIndex == tempStartPointIndex) || (item.endIndex == index && item.startIndex == tempStartPointIndex));
+          doEdgeModeClean();
+          clearSolveAnswer();
         }
       }
     }
   }
 
   bool checkIfDuplicateEdge(int tempStartPointIndex, int endPointIndex) {
-    for (int i = 0; i < edgeList.length; i ++) // do normal edge check first
-        {
+    for (int i = 0; i < edgeList.length; i++) {
+      // do normal edge check first
       Edge edge = edgeList[i];
-
-      if (edge.repeat == 0) // normal edge
-          {
-        if ((edge.startIndex == tempStartPointIndex &&
-            edge.endIndex == endPointIndex) ||
-            (edge.startIndex == endPointIndex &&
-                edge.endIndex == tempStartPointIndex)) {
-          return true;
-        }
+      if ((edge.startIndex == tempStartPointIndex &&
+              edge.endIndex == endPointIndex) ||
+          (edge.startIndex == endPointIndex &&
+              edge.endIndex == tempStartPointIndex)) {
+        return true;
       }
     }
-
-
-    for (int i = 0; i < edgeList.length; i ++) {
-      Edge edge = edgeList[i];
-
-      if (edge.repeat == 2) // repeat edge
-          {
-        if (edge.startIndex == tempStartPointIndex &&
-            edge.endIndex == endPointIndex) {
-          return true;
-        }
-
-        if (edge.startIndex == endPointIndex &&
-            edge.endIndex == tempStartPointIndex) {
-          return false; // allow one more time
-        }
-      }
-    }
-
     return false;
   }
-
 
   void onTapDown(TapDownDetails d) {
     switch (mode) {
       case MODE_VERTEX:
         addVertexToList(d);
         break;
-
+      case MODE_DELETE_VERTEX:
+        deleteVertex(d);
+        break;
       default:
         ;
     }
-
 
     // buttons action
     if (vertexButton.rect.contains(d.globalPosition)) {
@@ -869,13 +924,24 @@ class LangawGame extends Game {
       edgeButton.onTapDown();
     }
 
+    if (eraseButton.rect.contains(d.globalPosition)) {
+      eraseButton.onTapDown();
+    }
 
     if (printButton.rect.contains(d.globalPosition)) {
       printButton.onTapDown();
     }
 
+    if (deleteVertexButton.rect.contains(d.globalPosition)) {
+      deleteVertexButton.onTapDown();
+    }
+
     if (moveButton.rect.contains(d.globalPosition)) {
       moveButton.onTapDown();
+    }
+
+    if (scaleButton.rect.contains(d.globalPosition)) {
+      scaleButton.onTapDown();
     }
 
     if (preButton.rect.contains(d.globalPosition)) {
@@ -890,16 +956,13 @@ class LangawGame extends Game {
       saveButton.onTapDown();
     }
 
-
     if (undoButton.rect.contains(d.globalPosition)) {
       undoButton.onTapDown();
     }
 
-
     if (edgeRepeatButton.rect.contains(d.globalPosition)) {
       edgeRepeatButton.onTapDown();
     }
-
 
     if (edgeDirectionButton.rect.contains(d.globalPosition)) {
       edgeDirectionButton.onTapDown();
@@ -911,31 +974,61 @@ class LangawGame extends Game {
 
     //temp put it here
 //    takeScreenshot();
-
-
   }
-
 
   void unDo() {
-    switch (mode) {
-      case MODE_VERTEX:
-        if (vertexList.length > 0)
-          vertexList.removeLast();
-        break;
-      case MODE_EDGE:
-      case MODE_EDGE_REPEAT:
-      case MODE_EDGE_LOCK:
-        if (edgeList.length > 0)
-          edgeList.removeLast();
-        break;
-      default:
-        ;
+    if (isOddGraph()) {
+      prefix2.Fluttertoast.showToast(
+          msg: "奇数点过多",
+          gravity: ToastGravity.CENTER);
+      return;
     }
+    BFS bfs = BFS(edgeList, vertexList.length);
+    if (!bfs.bfs()) {
+      prefix2.Fluttertoast.showToast(
+          msg: "该图不连通",
+          gravity: ToastGravity.CENTER);
+      return;
+    }
+    int startSolveIndex = getSolveStartIndex();
+    getSolveEdgeList();
+    solveDfs(startSolveIndex, 0, false, false);
+    for (int i = 0; i < edgeList.length; i++) {
+      Edge edge = edgeList[i];
+      SolveVertex start = solveVertexList[i];
+      SolveVertex end = solveVertexList[i+1];
+      edge.startIndex = start.index;
+      edge.endIndex = end.index;
+      if (end.isDoubleEdge) {
+        edge.repeat = 2;
+      } else {
+        edge.repeat = 1;
+      }
+      if (end.isDirect) {
+        edge.lock = true;
+      } else {
+        edge.lock = false;
+      }
+    }
+    int a = 0;
+    print('solveVertexList' + game.solveVertexList.length.toString());
+
+//    switch (mode) {
+//      case MODE_VERTEX:
+//        if (vertexList.length > 0) vertexList.removeLast();
+//        break;
+//      case MODE_EDGE:
+//      case MODE_EDGE_REPEAT:
+//      case MODE_EDGE_LOCK:
+//        if (edgeList.length > 0) edgeList.removeLast();
+//        break;
+//      default:
+//        ;
+//    }
+
   }
 
-
-  void loadCandidateLevelData() async
-  {
+  void loadCandidateLevelData() async {
 //    if (true) {
 //      generateJsons();
 //      return;
@@ -952,7 +1045,7 @@ class LangawGame extends Game {
     List<String> levelDatas = LevelDataProduct.RES;
     //levelDatas = DataOrigin.DATA_SWAP_ADD_LEVEL;
     int length = levelDatas.length;
-    for (int i = 0; i < length; i ++) {
+    for (int i = 0; i < length; i++) {
 //        doClean(); // clean everything first
 //        print(LevelData.LEVEL_DATA[i]);
       String levelData = await rootBundle.loadString(levelDatas[i]);
@@ -960,7 +1053,6 @@ class LangawGame extends Game {
       var parsedJson = json.decode(levelData);
       var edges = parsedJson['edges'];
       var vertices = parsedJson['vertices'];
-
 
       List<Edge> edgeListToImage = [];
       List<Offset> vertexListToImage = [];
@@ -971,7 +1063,7 @@ class LangawGame extends Game {
 
       List<Offset> tunedVertexListToImage = [];
 
-      for (int i = 0; i < edges.length; i ++) {
+      for (int i = 0; i < edges.length; i++) {
         Edge edge = Edge(edges[i]);
         edgeListToImage.add(edge);
         if (edge.repeat == 1) {
@@ -981,7 +1073,7 @@ class LangawGame extends Game {
         }
       }
 
-      for (int i = 0; i < vertices.length; i ++) {
+      for (int i = 0; i < vertices.length; i++) {
         Vertex vertex = Vertex(vertices[i]);
         vertexList.add(vertex);
       }
@@ -1072,8 +1164,8 @@ class LangawGame extends Game {
             swapList.add(rightList[0]);
             swapList.add(rightList[1]);
           }
-          List<Edge> swapEdgeList = getSwapEdgeList(
-              swapList, eulerSwapTwoPairs.edgeList);
+          List<Edge> swapEdgeList =
+              getSwapEdgeList(swapList, eulerSwapTwoPairs.edgeList);
           hasUglyEdge =
               prefix1.hasUglyEdge(eulerSwapTwoPairs.vertexList, swapEdgeList);
           if (hasUglyEdge) {
@@ -1090,9 +1182,8 @@ class LangawGame extends Game {
           tempList = eulerSwapTwoPairs.vertexList;
           edgeListToImage = eulerSwapTwoPairs.edgeList;
         } else if (j == 6) {
-          euler = getEulerInfo(
-              euler.vertexList, euler.edgeList, 550 / euler.height,
-              500 / euler.width);
+          euler = getEulerInfo(euler.vertexList, euler.edgeList,
+              550 / euler.height, 500 / euler.width);
           if (hasUglyEdge || has) {
             continue;
           }
@@ -1106,10 +1197,10 @@ class LangawGame extends Game {
 //            }
           eulerSwapTwoPairsDown.vertexList =
               translateX180(eulerSwapTwoPairsDown.vertexList, center);
-          List<Vertex> leftList = findLeftDownConnerPoints(
-              eulerSwapTwoPairsDown);
-          List<Vertex> rightList = findRightDownConnerPoints(
-              eulerSwapTwoPairsDown);
+          List<Vertex> leftList =
+              findLeftDownConnerPoints(eulerSwapTwoPairsDown);
+          List<Vertex> rightList =
+              findRightDownConnerPoints(eulerSwapTwoPairsDown);
           List<Vertex> swapList = [];
           if (leftList.isNotEmpty) {
             swapVertex(eulerSwapTwoPairsDown, leftList[0], leftList[1], false);
@@ -1122,8 +1213,8 @@ class LangawGame extends Game {
             swapList.add(rightList[0]);
             swapList.add(rightList[1]);
           }
-          List<Edge> swapEdgeList = getSwapEdgeList(
-              swapList, eulerSwapTwoPairsDown.edgeList);
+          List<Edge> swapEdgeList =
+              getSwapEdgeList(swapList, eulerSwapTwoPairsDown.edgeList);
           hasUglyEdge = prefix1.hasUglyEdge(
               eulerSwapTwoPairsDown.vertexList, swapEdgeList);
           if (hasUglyEdge) {
@@ -1148,11 +1239,10 @@ class LangawGame extends Game {
           print("hhhhhh13");
           swapVertex(eulerTopY, vertexList[0], vertexList[1], false);
           List<Vertex> swapList = [vertexList[0], vertexList[1]];
-          List<Edge> swapEdgeList = getSwapEdgeList(
-              swapList, eulerTopY.edgeList);
+          List<Edge> swapEdgeList =
+              getSwapEdgeList(swapList, eulerTopY.edgeList);
 
           print("hhhhhh12");
-
 
           hasUglyEdge = prefix1.hasUglyEdge(eulerTopY.vertexList, swapEdgeList);
           print("hhhhhh1");
@@ -1170,8 +1260,8 @@ class LangawGame extends Game {
             has = true;
             continue;
           }
-          List<Vertex> vertexList = getYCenterVertexList(
-              eulerBottomY, TYPE_BOTTOM);
+          List<Vertex> vertexList =
+              getYCenterVertexList(eulerBottomY, TYPE_BOTTOM);
           if (vertexList == null || vertexList.length < 2) {
             print("no center top " + i.toString());
             has = true;
@@ -1179,8 +1269,8 @@ class LangawGame extends Game {
           }
           swapVertex(eulerBottomY, vertexList[0], vertexList[1], false);
           List<Vertex> swapList = [vertexList[0], vertexList[1]];
-          List<Edge> swapEdgeList = getSwapEdgeList(
-              swapList, eulerBottomY.edgeList);
+          List<Edge> swapEdgeList =
+              getSwapEdgeList(swapList, eulerBottomY.edgeList);
           hasUglyEdge =
               prefix1.hasUglyEdge(eulerBottomY.vertexList, swapEdgeList);
           if (hasUglyEdge) {
@@ -1195,9 +1285,11 @@ class LangawGame extends Game {
           Vertex vertex = tempList[k];
           vertexListToImage.add(Offset(vertex.x, vertex.y));
         }
-        var path = "onelineln/" + levelDatas[i].replaceAll("assets/", "")
-            .replaceAll("/", "-")
-            .replaceAll(".txt", "");
+        var path = "onelineln/" +
+            levelDatas[i]
+                .replaceAll("assets/", "")
+                .replaceAll("/", "-")
+                .replaceAll(".txt", "");
 //          for (int i = 1000; i < 1024; i++) {
 //            String folder = "level/"+"lp" + i.toString();
 //            var directory = new Directory((await getExternalStorageDirectory()).path +"/"+ folder);
@@ -1213,13 +1305,13 @@ class LangawGame extends Game {
         } else {
           outPutPngFilePath = path + "-" + tail + ".png";
 
-
 //        drawLevelDataToPng(outPutPngFilePath, edgeListToImage, vertexListToImage, tunedVertexListToImage);
 
           drawLevelDataToPng(
               outPutPngFilePath, edgeListToImage, vertexListToImage, null);
         }
-        var jsonPath = levelDatas[i].replaceAll("assets/", "")
+        var jsonPath = levelDatas[i]
+            .replaceAll("assets/", "")
             .replaceAll("/", "-")
             .replaceAll(".txt", "");
         List<String> paths = levelDatas[i].split('/');
@@ -1227,8 +1319,8 @@ class LangawGame extends Game {
             tempList, eulerSwapTwoPairs, FINAL_HEIGHT, FINAL_WIDTH);
         String name = paths[paths.length - 1];
         String //outJsonPath = (await getExternalStorageDirectory()).path +"level/" + paths[paths.length-2] + "/" + name.substring(2);
-        outJsonPath = (await getExternalStorageDirectory()).path + "/level/" +
-            jsonPath;
+            outJsonPath =
+            (await getExternalStorageDirectory()).path + "/level/" + jsonPath;
 
         outputVertexAndEdgeJson(tempList, edgeListToImage, outJsonPath);
       }
@@ -1237,17 +1329,14 @@ class LangawGame extends Game {
     }
   }
 
-
-  void loadCrazyGameData() async
-  {
+  void loadCrazyGameData() async {
     String allLevelData = await rootBundle.loadString('assets/crazygame/data1');
-
 
     var objs = json.decode(allLevelData);
 
     var levels = objs['levels'];
 
-    for (int i = 0; i < levels.length; i ++) {
+    for (int i = 0; i < levels.length; i++) {
       print(levels[i]);
       if (levels[i] != null) {
         var vertices = levels[i]['vertices'];
@@ -1258,7 +1347,7 @@ class LangawGame extends Game {
 
         print(edges.length);
 
-        for (int edgeIndex = 0; edgeIndex < edges.length; edgeIndex ++) {
+        for (int edgeIndex = 0; edgeIndex < edges.length; edgeIndex++) {
           Edge edge = Edge(null);
           edge.startIndex = edges[edgeIndex][0];
           edge.endIndex = edges[edgeIndex][1];
@@ -1266,10 +1355,10 @@ class LangawGame extends Game {
           edgeListToImage.add(edge);
         }
 
-
         print(vertices.length);
-        for (int vertexIndex = 0; vertexIndex <
-            vertices.length; vertexIndex ++) {
+        for (int vertexIndex = 0;
+            vertexIndex < vertices.length;
+            vertexIndex++) {
           Vertex vertex = Vertex(null);
           int x = vertices[vertexIndex][0];
           vertex.x = x.toDouble();
@@ -1280,9 +1369,7 @@ class LangawGame extends Game {
           vertexListToImage.add(Offset(vertex.x, vertex.y));
         }
 
-
         outPutPngFilePath = "crazygame/data$i.png";
-
 
         print(edgeListToImage.length);
         print(vertexListToImage.length);
@@ -1295,16 +1382,16 @@ class LangawGame extends Game {
     }
   }
 
-
-  void drawLevelDataToPng(String outPutPngFilePath, List<Edge> edgeListToImage,
+  void drawLevelDataToPng(
+      String outPutPngFilePath,
+      List<Edge> edgeListToImage,
       List<Offset> vertexListToImage,
       List<Offset> tunedVertexListToImage) async {
     var pictureRecorder = new PictureRecorder();
     Canvas canvas = new Canvas(pictureRecorder);
 
-    commonRenderPart(
-        canvas, outPutPngFilePath, edgeListToImage, vertexListToImage,
-        tunedVertexListToImage);
+    commonRenderPart(canvas, outPutPngFilePath, edgeListToImage,
+        vertexListToImage, tunedVertexListToImage);
 
     int imageWidth = X_LIMIT.toInt();
 
@@ -1312,56 +1399,47 @@ class LangawGame extends Game {
       imageWidth = X_LIMIT.toInt() * 2;
     }
 
-    ui.Image image = await pictureRecorder.endRecording().toImage(
-        imageWidth, (Y_LIMIT + 100).toInt());
+    ui.Image image = await pictureRecorder
+        .endRecording()
+        .toImage(imageWidth, (Y_LIMIT + 100).toInt());
     ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     Uint8List pngBytes = byteData.buffer.asUint8List();
 
     writeImage(pngBytes, outPutPngFilePath);
   }
 
-
   void commonRenderPartDrawEdge(Canvas canvas, List<Edge> edgeListToImage,
       List<Offset> vertexListToImage, double canvasXShift) {
     List<int> listOfRepeatEdgeIndexs = new List();
 
-    for (int i = 0; i < edgeListToImage.length; i ++) // draw edge
-        {
+    for (int i = 0; i < edgeListToImage.length; i++) // draw edge
+    {
       Edge edge = edgeListToImage.elementAt(i);
 
-
-      if (edge.startIndex < 0 || edge.endIndex < 0 ||
+      if (edge.startIndex < 0 ||
+          edge.endIndex < 0 ||
           edge.endIndex >= vertexListToImage.length) {
-        print('!!!!!!!error!!!$outPutPngFilePath edge.startIndex=${edge
-            .startIndex}  edge.endIndex=${edge.endIndex}');
+        print(
+            '!!!!!!!error!!!$outPutPngFilePath edge.startIndex=${edge.startIndex}  edge.endIndex=${edge.endIndex}');
       }
 
+      Offset offsetStartPoint = Offset(
+          vertexListToImage.elementAt(edge.startIndex).dx + canvasXShift,
+          vertexListToImage.elementAt(edge.startIndex).dy);
 
-      Offset offsetStartPoint = Offset(vertexListToImage
-          .elementAt(edge.startIndex)
-          .dx + canvasXShift, vertexListToImage
-          .elementAt(edge.startIndex)
-          .dy);
-
-      Offset offsetEndPoint = Offset(vertexListToImage
-          .elementAt(edge.endIndex)
-          .dx + canvasXShift, vertexListToImage
-          .elementAt(edge.endIndex)
-          .dy);
-
+      Offset offsetEndPoint = Offset(
+          vertexListToImage.elementAt(edge.endIndex).dx + canvasXShift,
+          vertexListToImage.elementAt(edge.endIndex).dy);
 
       if (edge.repeat == 2) {
         listOfRepeatEdgeIndexs.add(i);
-      }
-
-      else if (edge.lock == true) {
+      } else if (edge.lock == true) {
         Paint linePaint = Paint();
         linePaint.color = Color(0xffaaddbb);
         linePaint.strokeWidth = LINE_CONNETED_EDGE;
         canvas.drawLine(offsetStartPoint, offsetEndPoint, linePaint);
         drawEdgeDirectionLabel(canvas, offsetStartPoint, offsetEndPoint);
-      }
-      else {
+      } else {
         Paint linePaint = Paint();
         linePaint.color = Color(0xffaaddbb);
         linePaint.strokeWidth = LINE_CONNETED_EDGE;
@@ -1369,40 +1447,35 @@ class LangawGame extends Game {
       }
     }
 
-
     //draw repeated edge
-    drawRepeatedEdge(
-        canvas, listOfRepeatEdgeIndexs, edgeListToImage, vertexListToImage,
-        canvasXShift);
+    drawRepeatedEdge(canvas, listOfRepeatEdgeIndexs, edgeListToImage,
+        vertexListToImage, canvasXShift);
   }
 
-  void commonRenderPartDrawVerices(Canvas canvas,
-      List<Offset> vertexListToImage, double canvasXShift) {
+  void commonRenderPartDrawVerices(
+      Canvas canvas, List<Offset> vertexListToImage, double canvasXShift) {
     double radius = 20;
     //draw all the vertex
     Paint radiusPaint = Paint();
     radiusPaint.color = Color(0xffff00ff);
-    for (int i = 0; i < vertexListToImage.length; i ++) {
-      Offset offset = Offset(vertexListToImage
-          .elementAt(i)
-          .dx + canvasXShift, vertexListToImage
-          .elementAt(i)
-          .dy);
+    for (int i = 0; i < vertexListToImage.length; i++) {
+      Offset offset = Offset(vertexListToImage.elementAt(i).dx + canvasXShift,
+          vertexListToImage.elementAt(i).dy);
 
       canvas.drawCircle(offset, radius, radiusPaint);
-
 
       Vertex vertex = new Vertex(null);
       String id = vertex.getVectexId(i);
 
+      Offset idTextOffset =
+          Offset(offset.dx - radius / 2 + 1.4, offset.dy - radius / 2 - 3);
 
-      Offset idTextOffset = Offset(
-          offset.dx - radius / 2 + 1.4, offset.dy - radius / 2 - 3);
-
-      TextSpan span = new TextSpan(text: id,
-          style: TextStyle(
-              fontSize: VERTEX_FONT_SIZE + 8, color: Colors.white));
-      TextPainter tp = new TextPainter(text: span,
+      TextSpan span = new TextSpan(
+          text: id,
+          style:
+              TextStyle(fontSize: VERTEX_FONT_SIZE + 8, color: Colors.white));
+      TextPainter tp = new TextPainter(
+          text: span,
           textAlign: TextAlign.justify,
           textDirection: TextDirection.ltr);
       tp.layout();
@@ -1410,12 +1483,14 @@ class LangawGame extends Game {
     }
   }
 
-  void commonRenderPart(Canvas canvas, String outPutPngFilePath,
-      List<Edge> edgeListToImage, List<Offset> vertexListToImage,
+  void commonRenderPart(
+      Canvas canvas,
+      String outPutPngFilePath,
+      List<Edge> edgeListToImage,
+      List<Offset> vertexListToImage,
       List<Offset> tunedVertexListToImage) {
     int ratio = 1;
-    if (tunedVertexListToImage != null)
-      ratio = 2;
+    if (tunedVertexListToImage != null) ratio = 2;
 
     Rect bgRect = Rect.fromLTWH(0, 0, X_LIMIT * ratio, Y_LIMIT + 100);
     Paint bgPaint = Paint();
@@ -1424,12 +1499,10 @@ class LangawGame extends Game {
 
     commonRenderPartDrawEdge(canvas, edgeListToImage, vertexListToImage, 40);
 
-
     if (tunedVertexListToImage != null) {
       commonRenderPartDrawEdge(
           canvas, edgeListToImage, tunedVertexListToImage, X_LIMIT);
     }
-
 
     commonRenderPartDrawVerices(canvas, vertexListToImage, 40);
 
@@ -1448,9 +1521,11 @@ class LangawGame extends Game {
     }
     prefix1.Edge lastEdge = edgeListToImage[edgeListToImage.length - 1];
     answer += lastEdge.getVectexId(lastEdge.endIndex);
-    TextSpan answerSpan = new TextSpan(text: answer,
+    TextSpan answerSpan = new TextSpan(
+        text: answer,
         style: TextStyle(fontSize: VERTEX_FONT_SIZE * 2, color: Colors.black));
-    TextPainter answerTp = new TextPainter(text: answerSpan,
+    TextPainter answerTp = new TextPainter(
+        text: answerSpan,
         textAlign: TextAlign.justify,
         textDirection: TextDirection.ltr);
     answerTp.layout();
@@ -1464,10 +1539,7 @@ class LangawGame extends Game {
 //          textDirection: TextDirection.ltr);
 //    tp.layout();
 //    tp.paint(canvas, Offset(50,  Y_LIMIT + 50));
-
-
   }
-
 
   Future<File> _localFile(String outPutPngFilePath) async {
     if (outPutPngFilePath.contains("15"))
@@ -1482,16 +1554,15 @@ class LangawGame extends Game {
     return file.writeAsBytes(pngBytes);
   }
 
-  void outputVertexAndEdgeJson(List<Vertex> vertexList, List<Edge> edgeList,
-      String fileName) async
-  {
+  void outputVertexAndEdgeJson(
+      List<Vertex> vertexList, List<Edge> edgeList, String fileName) async {
     if (true) {
       Map<String, dynamic> map = new Map();
 
       List<Edge> edges = new List(edgeList.length);
 
-      for (int i = 0; i < edgeList.length; i ++) // draw edge
-          {
+      for (int i = 0; i < edgeList.length; i++) // draw edge
+      {
         Edge edge = edgeList.elementAt(i);
         edges[i] = edge;
         edges[i].inArrayIndex = i;
@@ -1500,7 +1571,7 @@ class LangawGame extends Game {
       map['edges'] = edges;
 
       List<Vertex> vertexs = new List(vertexList.length);
-      for (int i = 0; i < vertexList.length; i ++) {
+      for (int i = 0; i < vertexList.length; i++) {
         Offset offset = new Offset(vertexList[i].x, vertexList[i].y);
         Vertex vertex = new Vertex(null);
         vertex.x = offset.dx;
@@ -1516,7 +1587,6 @@ class LangawGame extends Game {
       }
 
       map['vertices'] = vertexs;
-
 
       map['graph'] = {"height": 924, "width": 840};
 
@@ -1534,15 +1604,12 @@ class LangawGame extends Game {
       }
       await file.writeAsString(finalJson);
       //printLog(finalJson);
-    }
-    else {
+    } else {
       print('奇数边的点不是两个，请检查边是否有问题！！');
     }
   }
 
-
-  void generateJsons() async
-  {
+  void generateJsons() async {
     for (int k = 3; k < 4; k++) {
       List<String> levelDatas = LevelDataProduct.RES;
       if (k == 0) {
@@ -1559,7 +1626,7 @@ class LangawGame extends Game {
         levelDatas = LevelDataProduct.SWAP_BOTTOM;
       }
       int length = levelDatas.length;
-      for (int i = 0; i < length; i ++) {
+      for (int i = 0; i < length; i++) {
         String levelData = await rootBundle.loadString(levelDatas[i]);
         var parsedJson = json.decode(levelData);
         var edges = parsedJson['edges'];
@@ -1571,7 +1638,7 @@ class LangawGame extends Game {
 
         List<int> edgeIndexListRepeatOne = [];
         List<int> edgeIndexListRepeatTwice = [];
-        for (int i = 0; i < edges.length; i ++) {
+        for (int i = 0; i < edges.length; i++) {
           Edge edge = Edge(edges[i]);
           edgeListToImage.add(edge);
           if (edge.repeat == 1) {
@@ -1581,7 +1648,7 @@ class LangawGame extends Game {
           }
         }
 
-        for (int i = 0; i < vertices.length; i ++) {
+        for (int i = 0; i < vertices.length; i++) {
           Vertex vertex = Vertex(vertices[i]);
           vertexList.add(vertex);
         }
@@ -1624,8 +1691,8 @@ class LangawGame extends Game {
               swapList.add(rightList[0]);
               swapList.add(rightList[1]);
             }
-            List<Edge> swapEdgeList = getSwapEdgeList(
-                swapList, eulerSwapTwoPairs.edgeList);
+            List<Edge> swapEdgeList =
+                getSwapEdgeList(swapList, eulerSwapTwoPairs.edgeList);
             hasUglyEdge =
                 prefix1.hasUglyEdge(eulerSwapTwoPairs.vertexList, swapEdgeList);
             if (hasUglyEdge) {
@@ -1652,8 +1719,8 @@ class LangawGame extends Game {
               swapList.add(rightList[0]);
               swapList.add(rightList[1]);
             }
-            List<Edge> swapEdgeList = getSwapEdgeList(
-                swapList, eulerSwapTwoPairs.edgeList);
+            List<Edge> swapEdgeList =
+                getSwapEdgeList(swapList, eulerSwapTwoPairs.edgeList);
             hasUglyEdge =
                 prefix1.hasUglyEdge(eulerSwapTwoPairs.vertexList, swapEdgeList);
             if (hasUglyEdge) continue;
@@ -1673,10 +1740,10 @@ class LangawGame extends Game {
             tail = "swap-down";
             eulerSwapTwoPairsDown.vertexList =
                 translateX180(eulerSwapTwoPairsDown.vertexList, center);
-            List<Vertex> leftList = findLeftDownConnerPoints(
-                eulerSwapTwoPairsDown);
-            List<Vertex> rightList = findRightDownConnerPoints(
-                eulerSwapTwoPairsDown);
+            List<Vertex> leftList =
+                findLeftDownConnerPoints(eulerSwapTwoPairsDown);
+            List<Vertex> rightList =
+                findRightDownConnerPoints(eulerSwapTwoPairsDown);
             List<Vertex> swapList = [];
             if (leftList.isNotEmpty) {
               swapVertex(
@@ -1690,8 +1757,8 @@ class LangawGame extends Game {
               swapList.add(rightList[0]);
               swapList.add(rightList[1]);
             }
-            List<Edge> swapEdgeList = getSwapEdgeList(
-                swapList, eulerSwapTwoPairsDown.edgeList);
+            List<Edge> swapEdgeList =
+                getSwapEdgeList(swapList, eulerSwapTwoPairsDown.edgeList);
             hasUglyEdge = prefix1.hasUglyEdge(
                 eulerSwapTwoPairsDown.vertexList, swapEdgeList);
             if (hasUglyEdge) {
@@ -1710,8 +1777,8 @@ class LangawGame extends Game {
             }
             swapVertex(eulerTopY, vertexList[0], vertexList[1], false);
             List<Vertex> swapList = [vertexList[0], vertexList[1]];
-            List<Edge> swapEdgeList = getSwapEdgeList(
-                swapList, eulerTopY.edgeList);
+            List<Edge> swapEdgeList =
+                getSwapEdgeList(swapList, eulerTopY.edgeList);
 
             hasUglyEdge =
                 prefix1.hasUglyEdge(eulerTopY.vertexList, swapEdgeList);
@@ -1723,8 +1790,8 @@ class LangawGame extends Game {
             edgeListToImage = eulerTopY.edgeList;
           } else if (j == 5) {
             tail = "y-bottom";
-            List<Vertex> vertexList = getYCenterVertexList(
-                eulerBottomY, TYPE_BOTTOM);
+            List<Vertex> vertexList =
+                getYCenterVertexList(eulerBottomY, TYPE_BOTTOM);
             if (vertexList == null || vertexList.length < 2) {
               print("no center top " + i.toString());
               has = true;
@@ -1732,8 +1799,8 @@ class LangawGame extends Game {
             }
             swapVertex(eulerBottomY, vertexList[0], vertexList[1], false);
             List<Vertex> swapList = [vertexList[0], vertexList[1]];
-            List<Edge> swapEdgeList = getSwapEdgeList(
-                swapList, eulerBottomY.edgeList);
+            List<Edge> swapEdgeList =
+                getSwapEdgeList(swapList, eulerBottomY.edgeList);
             hasUglyEdge =
                 prefix1.hasUglyEdge(eulerBottomY.vertexList, swapEdgeList);
             if (hasUglyEdge) {
@@ -1748,19 +1815,22 @@ class LangawGame extends Game {
             Vertex vertex = tempList[k];
             vertexListToImage.add(Offset(vertex.x, vertex.y));
           }
-          var path = "onelineln/" + levelDatas[i].replaceAll("assets/", "")
-              .replaceAll("/", "-")
-              .replaceAll(".txt", "");
-          var jsonPath = levelDatas[i].replaceAll("assets/", "")
-              .replaceAll("/", "-")
-              .replaceAll(".txt", "") + ".txt";
+          var path = "onelineln/" +
+              levelDatas[i]
+                  .replaceAll("assets/", "")
+                  .replaceAll("/", "-")
+                  .replaceAll(".txt", "");
+          var jsonPath = levelDatas[i]
+                  .replaceAll("assets/", "")
+                  .replaceAll("/", "-")
+                  .replaceAll(".txt", "") +
+              ".txt";
           List<String> paths = levelDatas[i].split('/');
-          tempList = compressFinal(
-              tempList, euler, FINAL_HEIGHT, FINAL_WIDTH);
+          tempList = compressFinal(tempList, euler, FINAL_HEIGHT, FINAL_WIDTH);
           String name = paths[paths.length - 1];
           String //outJsonPath = (await getExternalStorageDirectory()).path +"level/" + paths[paths.length-2] + "/" + name.substring(2);
-          outJsonPath = (await getExternalStorageDirectory()).path + "/level/" +
-              jsonPath;
+              outJsonPath =
+              (await getExternalStorageDirectory()).path + "/level/" + jsonPath;
           outputVertexAndEdgeJson(tempList, edgeListToImage, outJsonPath);
         }
         print('level datad count = $i');
@@ -1769,8 +1839,7 @@ class LangawGame extends Game {
   }
 
   //out put the edge and vertex to json
-  void saveJson() async
-  {
+  void saveJson() async {
     List<FileStruct> fileList = myApp.state.fileList;
     int selectPos = myApp.state.selectPos;
     if (fileList == null || selectPos < 0 || selectPos > fileList.length - 1) {
@@ -1783,17 +1852,20 @@ class LangawGame extends Game {
     if (struct.level > 999) stage = "/lvl";
     String fileName1 = (await getExternalStorageDirectory()).path + ancestor;
     String fileName2 = fileName1 + "lp" + struct.level.toString() + "/";
-    String fileName = (await getExternalStorageDirectory()).path + ancestor +
-        "lp"
-        + struct.level.toString() + stage + struct.stage.toString();
+    String fileName = (await getExternalStorageDirectory()).path +
+        ancestor +
+        "lp" +
+        struct.level.toString() +
+        stage +
+        struct.stage.toString();
 
     if (doVertexCheckValid()) {
       Map<String, dynamic> map = new Map();
 
       List<Edge> edges = copyEdgeList(edgeList);
 
-      for (int i = 0; i < edgeList.length; i ++) // draw edge
-          {
+      for (int i = 0; i < edgeList.length; i++) // draw edge
+      {
         Edge edge = edgeList.elementAt(i);
         edge.inArrayIndex = i;
         edges[i] = edge;
@@ -1802,7 +1874,7 @@ class LangawGame extends Game {
       map['edges'] = edges;
 
       List<Vertex> vertexes = new List(vertexList.length);
-      for (int i = 0; i < vertexList.length; i ++) {
+      for (int i = 0; i < vertexList.length; i++) {
         Offset offset = vertexList.elementAt(i);
 
         Vertex vertex = new Vertex(null);
@@ -1821,7 +1893,6 @@ class LangawGame extends Game {
       adapterEditScreen(vertexes, shape, adapterY, adapterX);
 
       map['vertices'] = vertexes;
-
 
       map['graph'] = {"height": 924, "width": 840};
 
@@ -1849,9 +1920,10 @@ class LangawGame extends Game {
       Directory directory = new Directory(fileName2);
       directory.listSync().length;
       //Toast.show("保存完成", mContext);
-      prefix2.Fluttertoast.showToast(msg: "已编辑完" +  directory.listSync().length.toString()+"个");
-    }
-    else {
+      prefix2.Fluttertoast.showToast(
+          msg: "已编辑完" + directory.listSync().length.toString() + "个",
+          gravity: ToastGravity.TOP);
+    } else {
       print('奇数边的点不是两个，请检查边是否有问题！！');
     }
   }
@@ -1860,7 +1932,7 @@ class LangawGame extends Game {
     List<FileStruct> allFileList = [];
     allFileList.addAll(levelList);
     //allFileList.addAll(challengeList.sublist(270));
-    for (int i = 0; i < allFileList.length; i ++) {
+    for (int i = 0; i < allFileList.length; i++) {
       FileStruct file = allFileList[i];
       String levelData = await rootBundle.loadString(file.path);
 
@@ -1872,12 +1944,12 @@ class LangawGame extends Game {
       List<Offset> vertexListToImage = [];
       List<Vertex> vertexList = [];
 
-      for (int i = 0; i < edges.length; i ++) {
+      for (int i = 0; i < edges.length; i++) {
         Edge edge = Edge(edges[i]);
         edgeListToImage.add(edge);
       }
 
-      for (int i = 0; i < vertices.length; i ++) {
+      for (int i = 0; i < vertices.length; i++) {
         Vertex vertex = Vertex(vertices[i]);
         vertexList.add(vertex);
       }
@@ -1894,32 +1966,44 @@ class LangawGame extends Game {
       }
       var path = "onelineln/";
       if (file.level < 999) {
-        outPutPngFilePath =
-            path + "level/level" + (file.level).toString() + "/" +
-                "level" + (file.level).toString() + "-stage" +
-                (file.stage).toString() + ".png";
-        String directoryPath1 = (await getExternalStorageDirectory()).path +
-            "/" + path + "level/";
+        outPutPngFilePath = path +
+            "level/level" +
+            (file.level).toString() +
+            "/" +
+            "level" +
+            (file.level).toString() +
+            "-stage" +
+            (file.stage).toString() +
+            ".png";
+        String directoryPath1 =
+            (await getExternalStorageDirectory()).path + "/" + path + "level/";
         Directory directory1 = Directory(directoryPath1);
         if (!directory1.existsSync()) directory1.createSync();
-        String directoryPath2 = directoryPath1 + "level" +
-            (file.level).toString() + "/";
+        String directoryPath2 =
+            directoryPath1 + "level" + (file.level).toString() + "/";
         Directory directory2 = Directory(directoryPath2);
         if (!directory2.existsSync()) directory2.createSync();
         drawLevelDataToPng(
             outPutPngFilePath, edgeListToImage, vertexListToImage, null);
         //printLog(outPutPngFilePath + "\n");
       } else {
-        outPutPngFilePath =
-            path + "challenge/level" + (file.level).toString() + "/" +
-                "level" + (file.level).toString() + "-stage" +
-                (file.stage).toString() + ".png";
+        outPutPngFilePath = path +
+            "challenge/level" +
+            (file.level).toString() +
+            "/" +
+            "level" +
+            (file.level).toString() +
+            "-stage" +
+            (file.stage).toString() +
+            ".png";
         String directoryPath1 = (await getExternalStorageDirectory()).path +
-            "/" + path + "challenge/";
+            "/" +
+            path +
+            "challenge/";
         Directory directory1 = Directory(directoryPath1);
         if (!directory1.existsSync()) directory1.createSync();
-        String directoryPath2 = directoryPath1 + "level" +
-            (file.level).toString() + "/";
+        String directoryPath2 =
+            directoryPath1 + "level" + (file.level).toString() + "/";
         Directory directory2 = Directory(directoryPath2);
         if (!directory2.existsSync()) directory2.createSync();
         drawLevelDataToPng(
@@ -1928,8 +2012,7 @@ class LangawGame extends Game {
     }
   }
 
-  void saveAllJson() async
-  {
+  void saveAllJson() async {
     List<FileStruct> fileList = challengeList;
     int selectPos = myApp.state.selectPos;
 //    if (fileList == null || selectPos < 0 || selectPos > fileList.length - 1) {
@@ -1943,9 +2026,12 @@ class LangawGame extends Game {
       if (struct.level > 999) stage = "/lvl";
       String fileName1 = (await getExternalStorageDirectory()).path + ancestor;
       String fileName2 = fileName1 + "lp" + struct.level.toString() + "/";
-      String fileName = (await getExternalStorageDirectory()).path + ancestor +
-          "lp"
-          + struct.level.toString() + stage + struct.stage.toString();
+      String fileName = (await getExternalStorageDirectory()).path +
+          ancestor +
+          "lp" +
+          struct.level.toString() +
+          stage +
+          struct.stage.toString();
       String levelData = await rootBundle.loadString(struct.path);
 
       var parsedJson = json.decode(levelData);
@@ -1956,12 +2042,12 @@ class LangawGame extends Game {
       vertexList.clear();
       List<Vertex> vertexListToImage = [];
 
-      for (int i = 0; i < edges.length; i ++) {
+      for (int i = 0; i < edges.length; i++) {
         Edge edge = Edge(edges[i]);
         edgeList.add(edge);
       }
 
-      for (int i = 0; i < vertices.length; i ++) {
+      for (int i = 0; i < vertices.length; i++) {
         Vertex vertex = Vertex(vertices[i]);
         vertexListToImage.add(vertex);
         vertexList.add(new Offset(vertex.x, vertex.y));
@@ -1971,8 +2057,8 @@ class LangawGame extends Game {
 
         List<Edge> edges = copyEdgeList(edgeList);
 
-        for (int i = 0; i < edgeList.length; i ++) // draw edge
-            {
+        for (int i = 0; i < edgeList.length; i++) // draw edge
+        {
           Edge edge = edgeList.elementAt(i);
           edge.inArrayIndex = i;
           edges[i] = edge;
@@ -1981,7 +2067,7 @@ class LangawGame extends Game {
         map['edges'] = edges;
 
         List<Vertex> vertexes = new List(vertexList.length);
-        for (int i = 0; i < vertexList.length; i ++) {
+        for (int i = 0; i < vertexList.length; i++) {
           Offset offset = vertexList.elementAt(i);
 
           Vertex vertex = new Vertex(null);
@@ -2000,7 +2086,6 @@ class LangawGame extends Game {
         adapterEditScreen(vertexes, shape, adapterY, adapterX);
 
         map['vertices'] = vertexes;
-
 
         map['graph'] = {"height": 924, "width": 840};
 
@@ -2025,15 +2110,13 @@ class LangawGame extends Game {
           file.createSync();
         }
         await file.writeAsString(finalJson);
-      }
-      else {
+      } else {
         print('奇数边的点不是两个，请检查边是否有问题！！');
       }
     }
   }
 
-  void saveAllJson730() async
-  {
+  void saveAllJson730() async {
     List<FileStruct> fileList = challengeList;
     int selectPos = myApp.state.selectPos;
 //    if (fileList == null || selectPos < 0 || selectPos > fileList.length - 1) {
@@ -2047,9 +2130,12 @@ class LangawGame extends Game {
       if (struct.level > 999) stage = "/lvl";
       String fileName1 = (await getExternalStorageDirectory()).path + ancestor;
       String fileName2 = fileName1 + "lp" + struct.level.toString() + "/";
-      String fileName = (await getExternalStorageDirectory()).path + ancestor +
-          "lp"
-          + struct.level.toString() + stage + struct.stage.toString();
+      String fileName = (await getExternalStorageDirectory()).path +
+          ancestor +
+          "lp" +
+          struct.level.toString() +
+          stage +
+          struct.stage.toString();
       String levelData = await rootBundle.loadString(struct.path);
 
       var parsedJson = json.decode(levelData);
@@ -2060,12 +2146,12 @@ class LangawGame extends Game {
       vertexList.clear();
       List<Vertex> vertexListToImage = [];
 
-      for (int i = 0; i < edges.length; i ++) {
+      for (int i = 0; i < edges.length; i++) {
         Edge edge = Edge(edges[i]);
         edgeList.add(edge);
       }
 
-      for (int i = 0; i < vertices.length; i ++) {
+      for (int i = 0; i < vertices.length; i++) {
         Vertex vertex = Vertex(vertices[i]);
         vertexListToImage.add(vertex);
         vertexList.add(new Offset(vertex.x, vertex.y));
@@ -2075,8 +2161,8 @@ class LangawGame extends Game {
 
         List<Edge> edges = copyEdgeList(edgeList);
 
-        for (int i = 0; i < edgeList.length; i ++) // draw edge
-            {
+        for (int i = 0; i < edgeList.length; i++) // draw edge
+        {
           Edge edge = edgeList.elementAt(i);
           edge.inArrayIndex = i;
           edges[i] = edge;
@@ -2085,7 +2171,7 @@ class LangawGame extends Game {
         map['edges'] = edges;
 
         List<Vertex> vertexes = new List(vertexList.length);
-        for (int i = 0; i < vertexList.length; i ++) {
+        for (int i = 0; i < vertexList.length; i++) {
           Offset offset = vertexList.elementAt(i);
 
           Vertex vertex = new Vertex(null);
@@ -2106,10 +2192,8 @@ class LangawGame extends Game {
 
         map['vertices'] = vertexes;
 
-
         map['graph'] = {"height": 924, "width": 840};
         map['graph'] = {"height": 803, "width": 730};
-
 
         String finalJson = jsonEncode(map);
 
@@ -2132,10 +2216,28 @@ class LangawGame extends Game {
           file.createSync();
         }
         await file.writeAsString(finalJson);
-      }
-      else {
+      } else {
         print('奇数边的点不是两个，请检查边是否有问题！！');
       }
+    }
+  }
+
+  bool isOddGraph() {
+    int count = 0;
+    for (int i = 0; i < degreeList.length; i++) {
+      if (degreeList[i]%2 == 1) {
+        count++;
+      }
+    }
+    if (count > 2) {
+      return true;
+    }
+    return false;
+  }
+
+  void clearSolveAnswer() {
+    if (solveVertexList.isNotEmpty) {
+      solveVertexList.clear();
     }
   }
 
